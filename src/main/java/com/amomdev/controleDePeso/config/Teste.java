@@ -23,9 +23,9 @@ public class Teste implements CommandLineRunner {
 
     @Override
     public void run(String... args) throws Exception {
-        Pesagem p1 = new Pesagem(90.0, data);
-        Pesagem p2 = new Pesagem(89.0, LocalDate.parse("11/08/2025", fmt));
-        Pesagem p3 = new Pesagem(87.0, LocalDate.now());
+        Pesagem p1 = new Pesagem(90.0, data, true, false);
+        Pesagem p2 = new Pesagem(89.0, LocalDate.parse("11/08/2025", fmt), false, false);
+        Pesagem p3 = new Pesagem(87.0, LocalDate.now(), true, true);
 
         repositoryPesagem.saveAll(Arrays.asList(p1, p2, p3));
     }

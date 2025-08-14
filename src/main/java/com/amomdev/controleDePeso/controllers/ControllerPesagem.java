@@ -12,7 +12,7 @@ import java.net.URI;
 import java.util.List;
 
 @RestController
-@RequestMapping(value = "/minhas-pesagens")
+@RequestMapping(value = "/home")
 public class ControllerPesagem {
 
     @Autowired
@@ -28,7 +28,7 @@ public class ControllerPesagem {
         return ResponseEntity.ok(servicePesagem.findById(id));
     }
 
-    @PostMapping
+    @PostMapping("/registrar")
     public ResponseEntity<Pesagem> insert(@RequestBody Pesagem obj) {
         obj = servicePesagem.insert(obj);
         URI uri = ServletUriComponentsBuilder

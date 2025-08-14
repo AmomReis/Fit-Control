@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Histórico de Pesagens</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --cor-escura: #0e0e0e;
+            --cor-clara: #f4f4f4;
+            --cor-roxa: #8a2be2;
+            --cor-roxa-clara: #a85be8;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, var(--cor-escura) 50%, var(--cor-roxa) 50%);
+            color: var(--cor-clara);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            overflow-x: hidden;
+            padding: 20px;
+        }
+        .conteudo-principal {
+            width: 100%;
+            max-width: 800px;
+            text-align: center;
+        }
+        header { text-align: center; margin-bottom: 40px; }
+        header h1 {
+            font-size: 3rem;
+            margin-bottom: 10px;
+            background: linear-gradient(to right, #FFD700, #FFA500, #FFD700);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 1px 1px 3px rgba(255, 215, 0, 0.6);
+        }
+        header p { font-size: 1.2rem; color: #ccc; }
+
+        .btn {
+            background: var(--cor-roxa);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 1.1rem;
+            border-radius: 30px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0px 4px 15px rgba(0,0,0,0.3);
+            margin-bottom: 30px;
+            text-decoration: none;
+            display: inline-block;
+        }
+        .btn:hover {
+            background: var(--cor-roxa-clara);
+            transform: scale(1.05);
+            box-shadow: 0px 6px 20px rgba(0,0,0,0.4);
+        }
+
+        /* Tabela de histórico */
+        .tabela-historico {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0px 6px 25px rgba(0,0,0,0.4);
+        }
+        .tabela-historico th, .tabela-historico td {
+            padding: 15px;
+            text-align: center;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .tabela-historico th {
+            background: rgba(138, 43, 226, 0.5);
+            font-weight: bold;
+        }
+        .tabela-historico tr:last-child td {
+            border-bottom: none;
+        }
+        .tabela-historico tr {
+            transition: background-color 0.3s ease;
+        }
+        .tabela-historico tr:hover {
+            background: rgba(138, 43, 226, 0.2);
+        }
+        .badge {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 10px;
+            font-size: 0.8rem;
+            font-weight: bold;
+            background: rgba(255, 215, 0, 0.2);
+            color: #FFD700;
+        }
+
+        footer {
+            margin-top: 40px;
+            font-size: 0.9rem;
+            color: #888;
+            text-align: center;
+        }
+
+        /* Animação para as linhas da tabela */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .tabela-historico tbody tr {
+            animation: fadeIn 0.5s ease forwards;
+        }
+        .tabela-historico tbody tr:nth-child(1) { animation-delay: 0.1s; }
+        .tabela-historico tbody tr:nth-child(2) { animation-delay: 0.2s; }
+        .tabela-historico tbody tr:nth-child(3) { animation-delay: 0.3s; }
+        .tabela-historico tbody tr:nth-child(4) { animation-delay: 0.4s; }
+        .tabela-historico tbody tr:nth-child(5) { animation-delay: 0.5s; }
+    </style>
+</head>
+<body>
+
+<div class="conteudo-principal">
+    <header>
+        <h1>Histórico de Pesagens</h1>
+        <p>Veja seu progresso ao longo do tempo</p>
+    </header>
+
+    <a href="/home" class="btn">Voltar</a>
+
+    <table class="tabela-historico">
+        <thead>
+        <tr>
+            <th>Data</th>
+            <th>Peso (kg)</th>
+            <th>Condições</th>
+            <th>Ações</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:each="pesagem : ${pesagens}">
+            <td th:text="${#temporals.format(pesagem.data, 'dd/MM/yyyy')}"></td>
+            <td th:text="${#numbers.formatDecimal(pesagem.massa, 1, 1)}"></td>
+            <td>
+                <span th:if="${pesagem.emJejum}" class="badge">Jejum</span>
+                <span th:if="${pesagem.intestinoVazio}" class="badge">Intestino vazio</span>
+            </td>
+            <td>
+                <a th:href="@{/pesagem/editar/{id}(id=${pesagem.id})}" class="btn" style="padding: 8px 15px; font-size: 0.9rem;">Editar</a>
+                <a th:href="@{/pesagem/excluir/{id}(id=${pesagem.id})}" class="btn" style="padding: 8px 15px; font-size: 0.9rem; background: #dc3545;"
+                   onclick="return confirm('Tem certeza que deseja excluir esta pesagem?');">Excluir</a>
+            </td>
+        </tr>
+        </tbody>
+    </table>
+
+    <footer>
+        &copy; 2025 Controle de Peso - Todos os direitos reservados
+    </footer>
+</div>
+
+<!-- Script apenas para a confirmação de exclusão -->
+<script>
+    function confirmarExclusao(event) {
+        if (!confirm('Tem certeza que deseja excluir esta pesagem?')) {
+            event.preventDefault();
+        }
+    }
+
+    // Adiciona o evento de confirmação a todos os links de exclusão
+    document.querySelectorAll('a[onclick]').forEach(link => {
+        link.addEventListener('click', confirmarExclusao);
+    });
+</script>
+
+</body>
+</html>

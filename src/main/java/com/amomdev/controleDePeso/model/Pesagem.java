@@ -25,12 +25,20 @@ public class Pesagem implements Serializable {
     @Getter @Setter
     private LocalDate data;
 
+    @Getter @Setter
+    private Boolean emJejum;
+
+    @Getter @Setter
+    private Boolean intestinoVazio;
+
     public Pesagem() {
     }
 
-    public Pesagem(Double massa, LocalDate data) {
+    public Pesagem(Double massa, LocalDate data, Boolean emJejum, Boolean intestinoVazio) {
         this.massa = massa;
         this.data = data;
+        this.emJejum = emJejum;
+        this.intestinoVazio = intestinoVazio;
     }
 
     @Override
