@@ -14,8 +14,8 @@ public class ServicePesagem {
     @Autowired
     private RepositoryPesagem repositoryPesagem;
 
-    public Pesagem insert(Pesagem p) {
-        return repositoryPesagem.save(p);
+    public void insert(Pesagem p) {
+        repositoryPesagem.save(p);
     }
 
     public void delete(Long id) {
@@ -30,8 +30,8 @@ public class ServicePesagem {
         }
     }
 
-    public Pesagem update(Long id, Pesagem obj) {
-        return repositoryPesagem.findById(id)
+    public void update(Long id, Pesagem obj) {
+        repositoryPesagem.findById(id)
                 .map(entity -> {
                     entity.setData(obj.getData());
                     entity.setMassa(obj.getMassa());

@@ -34,7 +34,17 @@ public class ControllerPesagem {
 
     @PostMapping("/pesagem/registrar")
     @ResponseBody
-    public ResponseEntity<Void> registrar(@ModelAttribute Pesagem obj) {
+    public ResponseEntity<Void> registrar(
+            @ModelAttribute Pesagem obj,
+            @RequestParam(value = "usarHoje", required = false) Boolean usarHoje) {
+
+        if (Boolean.TRUE.equals(usarHoje)) {
+            obj.setData(java.time.LocalDate.now());
+        } else if (obj.getData() == null) {
+            // Evita salvar null
+            obj.setData(java.time.LocalDate.now());
+        }
+
         servicePesagem.insert(obj);
         return ResponseEntity.ok().build();
     }
