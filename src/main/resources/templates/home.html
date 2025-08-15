@@ -59,6 +59,15 @@
             transition: all 0.3s ease;
             box-shadow: 0px 4px 15px rgba(0,0,0,0.3);
         }
+        /* Remove herança de link */
+        a.btn {
+            text-decoration: none;
+        }
+
+        /* Garante que <button> e <a> tenham o mesmo comportamento */
+        button.btn, a.btn {
+            display: inline-block;
+        }
         .btn:hover {
             background: var(--cor-roxa-clara);
             transform: scale(1.05);
@@ -128,8 +137,8 @@
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%) scale(0);
-            background: linear-gradient(to right, #FFD700, #FFA500);
-            color: #0e0e0e;
+            background: linear-gradient(to right, #870c8b, #FFA500);
+            color: #ffffff;
             padding: 20px 30px;
             border-radius: 20px;
             font-size: 1.2rem;
@@ -161,7 +170,7 @@
 
     <div class="botoes">
         <button class="btn" id="abrir-modal">Registrar Peso</button>
-        <button class="btn" >Histórico de Pesagens</button>
+        <a th:href="@{/pesagem/historico}" class="btn">Histórico de Pesagens</a>
     </div>
 
     <footer>
@@ -171,13 +180,17 @@
 
 <div class="overlay" id="overlay"></div>
 
-<form action="/home/registrar" method="post" class="modal" id="modal-form">
+<form action="/pesagem/registrar" method="post" class="modal" id="modal-form">
     <label>
         Peso (kg):
-        <input type="number" step="0.1" min="0" required>
+        <input type="number" step="0.1" min="0" name="massa" required>
     </label>
-    <label><input type="checkbox"> Em jejum</label>
-    <label><input type="checkbox"> Intestino vazio</label>
+    <label>
+        <input type="checkbox" name="emJejum"> Em jejum
+    </label>
+    <label>
+        <input type="checkbox" name="intestinoVazio"> Intestino vazio
+    </label>
     <button type="submit" class="btn">Salvar Pesagem</button>
 </form>
 
@@ -202,19 +215,31 @@
         conteudo.classList.remove('blur');
     });
 
-    modal.addEventListener('submit', (e) => {
+    modal.addEventListener('submit', function(e) {
         e.preventDefault();
         modal.classList.remove('show');
         overlay.classList.remove('show');
         conteudo.classList.remove('blur');
 
-        // Mostrar mensagem de sucesso
-        mensagem.classList.add('show');
-        setTimeout(() => {
-            mensagem.classList.remove('show');
-        }, 2000);
+        const formData = new FormData(this);
+
+        fetch(this.action, { method: "POST", body: formData })
+            .then(response => {
+                if (response.ok) {
+                    mensagem.textContent = "Peso registrado com sucesso!";
+                    mensagem.classList.add('show');
+                    this.reset();
+                    setTimeout(() => mensagem.classList.remove('show'), 2000);
+                } else {
+                    throw new Error('Erro no servidor');
+                }
+            })
+            .catch(() => {
+                mensagem.textContent = "Erro ao registrar peso!";
+                mensagem.classList.add('show');
+                setTimeout(() => mensagem.classList.remove('show'), 2000);
+            });
     });
 </script>
-
 </body>
 </html>

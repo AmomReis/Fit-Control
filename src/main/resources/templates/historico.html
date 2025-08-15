@@ -117,6 +117,86 @@
         .tabela-historico tbody tr:nth-child(3) { animation-delay: 0.3s; }
         .tabela-historico tbody tr:nth-child(4) { animation-delay: 0.4s; }
         .tabela-historico tbody tr:nth-child(5) { animation-delay: 0.5s; }
+
+        /* Modal */
+        .modal {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0);
+            background: rgba(255,255,255,0.05);
+            padding: 25px 35px;
+            border-radius: 20px;
+            box-shadow: 0px 6px 25px rgba(0,0,0,0.4);
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            min-width: 300px;
+            transition: transform 0.3s ease, opacity 0.3s ease;
+            opacity: 0;
+            z-index: 1000;
+        }
+        .modal.show {
+            transform: translate(-50%, -50%) scale(1);
+            opacity: 1;
+        }
+        .modal label {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 1rem;
+        }
+        .modal input[type="number"] {
+            padding: 8px 12px;
+            border-radius: 10px;
+            border: none;
+            font-size: 1rem;
+            flex: 1;
+        }
+        .modal input[type="checkbox"] { transform: scale(1.2); cursor: pointer; }
+        .modal button {
+            margin-top: 10px;
+            padding: 12px;
+            font-size: 1rem;
+            border-radius: 20px;
+            cursor: pointer;
+        }
+
+        /* Fundo escuro quando o modal abre */
+        .overlay {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0,0,0,0.6);
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+            z-index: 999;
+        }
+        .overlay.show { opacity: 1; pointer-events: all; }
+
+        /* Mensagem de sucesso */
+        .mensagem {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0);
+            background: linear-gradient(to right, #FFD700, #FFA500);
+            color: #0e0e0e;
+            padding: 20px 30px;
+            border-radius: 20px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            text-align: center;
+            box-shadow: 0px 6px 25px rgba(0,0,0,0.4);
+            opacity: 0;
+            transition: transform 0.3s ease, opacity 0.3s ease;
+            z-index: 2000;
+        }
+        .mensagem.show {
+            transform: translate(-50%, -50%) scale(1);
+            opacity: 1;
+        }
     </style>
 </head>
 <body>
@@ -126,8 +206,6 @@
         <h1>Histórico de Pesagens</h1>
         <p>Veja seu progresso ao longo do tempo</p>
     </header>
-
-    <a href="/home" class="btn">Voltar</a>
 
     <table class="tabela-historico">
         <thead>
@@ -141,38 +219,110 @@
         <tbody>
         <tr th:each="pesagem : ${pesagens}">
             <td th:text="${#temporals.format(pesagem.data, 'dd/MM/yyyy')}"></td>
-            <td th:text="${#numbers.formatDecimal(pesagem.massa, 1, 1)}"></td>
-            <td>
+            <td id="peso-${pesagem.id}" th:text="${#numbers.formatDecimal(pesagem.massa, 1, 1)}"></td>
+            <td id="condicoes-${pesagem.id}">
                 <span th:if="${pesagem.emJejum}" class="badge">Jejum</span>
                 <span th:if="${pesagem.intestinoVazio}" class="badge">Intestino vazio</span>
             </td>
             <td>
-                <a th:href="@{/pesagem/editar/{id}(id=${pesagem.id})}" class="btn" style="padding: 8px 15px; font-size: 0.9rem;">Editar</a>
-                <a th:href="@{/pesagem/excluir/{id}(id=${pesagem.id})}" class="btn" style="padding: 8px 15px; font-size: 0.9rem; background: #dc3545;"
-                   onclick="return confirm('Tem certeza que deseja excluir esta pesagem?');">Excluir</a>
+                <a href="#" th:attr="data-id=${pesagem.id}" class="btn btn-editar" style="padding: 8px 15px; font-size: 0.9rem;">Editar</a>
+                <a th:href="@{/pesagem/excluir/{id}(id=${pesagem.id})}"
+                   class="btn"
+                   style="padding: 8px 15px; font-size: 0.9rem; background: #dc3545;"
+                   onclick="return confirm('Tem certeza que deseja excluir esta pesagem?');">
+                    Excluir
+                </a>
             </td>
         </tr>
         </tbody>
     </table>
 
-    <footer>
-        &copy; 2025 Controle de Peso - Todos os direitos reservados
-    </footer>
+    <a href="/" class="btn">Voltar</a>
+
+    <footer>&copy; 2025 Controle de Peso - Todos os direitos reservados</footer>
 </div>
 
-<!-- Script apenas para a confirmação de exclusão -->
-<script>
-    function confirmarExclusao(event) {
-        if (!confirm('Tem certeza que deseja excluir esta pesagem?')) {
-            event.preventDefault();
-        }
-    }
+<div class="overlay" id="overlay-editar"></div>
 
-    // Adiciona o evento de confirmação a todos os links de exclusão
-    document.querySelectorAll('a[onclick]').forEach(link => {
-        link.addEventListener('click', confirmarExclusao);
+<form method="post" class="modal" id="modal-editar">
+    <label>
+        Peso (kg):
+        <input type="number" step="0.1" min="0" name="massa" required>
+    </label>
+    <label>
+        <input type="checkbox" name="emJejum"> Em jejum
+    </label>
+    <label>
+        <input type="checkbox" name="intestinoVazio"> Intestino vazio
+    </label>
+    <button type="submit" class="btn">Salvar Alterações</button>
+</form>
+
+<div class="mensagem" id="mensagem-sucesso-editar">Peso atualizado com sucesso!</div>
+
+<script>
+    // Abrir modal edição
+    document.querySelectorAll('.btn-editar').forEach(btn => {
+        btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            const id = this.getAttribute('data-id');
+            fetch(`/pesagem/${id}`)
+                .then(res => res.json())
+                .then(pesagem => {
+                    document.querySelector('#modal-editar [name="massa"]').value = pesagem.massa;
+                    document.querySelector('#modal-editar [name="emJejum"]').checked = pesagem.emJejum;
+                    document.querySelector('#modal-editar [name="intestinoVazio"]').checked = pesagem.intestinoVazio;
+                    document.getElementById('modal-editar').setAttribute('data-id', id);
+                    document.getElementById('modal-editar').classList.add('show');
+                    document.getElementById('overlay-editar').classList.add('show');
+                    document.querySelector('.conteudo-principal').classList.add('blur');
+                });
+        });
+    });
+
+    // Fechar modal
+    document.getElementById('overlay-editar').addEventListener('click', () => {
+        document.getElementById('modal-editar').classList.remove('show');
+        document.getElementById('overlay-editar').classList.remove('show');
+        document.querySelector('.conteudo-principal').classList.remove('blur');
+    });
+
+    // Salvar edição
+    document.getElementById('modal-editar').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const id = this.getAttribute('data-id');
+        const formData = new FormData(this);
+
+        fetch(`/pesagem/editar/${id}`, { method: 'POST', body: formData })
+            .then(res => {
+                if (res.ok) {
+                    document.querySelector(`#peso-${id}`).textContent = formData.get("massa");
+                    document.querySelector(`#condicoes-${id}`).innerHTML =
+                        (formData.get("emJejum") ? '<span class="badge">Jejum</span>' : '') +
+                        (formData.get("intestinoVazio") ? '<span class="badge">Intestino vazio</span>' : '');
+                    document.getElementById('mensagem-sucesso-editar').classList.add('show');
+                    setTimeout(() => document.getElementById('mensagem-sucesso-editar').classList.remove('show'), 2000);
+                    this.classList.remove('show');
+                    document.getElementById('overlay-editar').classList.remove('show');
+                    document.querySelector('.conteudo-principal').classList.remove('blur');
+                }
+            });
+    });
+
+    // Excluir registro
+    document.querySelectorAll('.btn-excluir').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const id = this.getAttribute('data-id');
+            if (confirm('Tem certeza que deseja excluir esta pesagem?')) {
+                fetch(`/pesagem/${id}`, { method: 'DELETE' })
+                    .then(res => {
+                        if (res.ok) {
+                            document.querySelector(`#peso-${id}`).closest('tr').remove();
+                        }
+                    });
+            }
+        });
     });
 </script>
-
 </body>
 </html>

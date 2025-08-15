@@ -1,55 +1,58 @@
 package com.amomdev.controleDePeso.controllers;
 
+import org.springframework.ui.Model;
 import com.amomdev.controleDePeso.model.Pesagem;
 import com.amomdev.controleDePeso.services.ServicePesagem;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
-import java.net.URI;
-import java.util.List;
-
-@RestController
-@RequestMapping(value = "/home")
+@Controller
 public class ControllerPesagem {
 
     @Autowired
     private ServicePesagem servicePesagem;
 
-    @GetMapping
-    public ResponseEntity<List<Pesagem>> findAll() {
-        return ResponseEntity.ok(servicePesagem.findAll());
+    @GetMapping("/")
+    public String home() {
+        return "home";
     }
 
-    @GetMapping("/{id}")
-    public ResponseEntity<Pesagem> findById(@PathVariable Long id) {
+    @GetMapping("/pesagem/historico")
+    public String historico(Model model) {
+        model.addAttribute("pesagens", servicePesagem.findAll());
+        return "historico"; // templates/historico.html
+    }
+
+    @GetMapping("/pesagem/{id}")
+    @ResponseBody
+    public ResponseEntity<Pesagem> getPesagem(@PathVariable Long id) {
         return ResponseEntity.ok(servicePesagem.findById(id));
     }
 
-    @PostMapping("/registrar")
-    public ResponseEntity<Pesagem> insert(@RequestBody Pesagem obj) {
-        obj = servicePesagem.insert(obj);
-        URI uri = ServletUriComponentsBuilder
-                .fromCurrentRequest().path("/{id}")
-                .buildAndExpand(obj.getId()).toUri();
-        return ResponseEntity.created(uri).body(obj);
+    @PostMapping("/pesagem/registrar")
+    @ResponseBody
+    public ResponseEntity<Void> registrar(@ModelAttribute Pesagem obj) {
+        servicePesagem.insert(obj);
+        return ResponseEntity.ok().build();
     }
 
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable Long id) {
-        servicePesagem.delete(id);
-        return ResponseEntity.noContent().build();
-    }
-
-    @PutMapping("/{id}")
-    public ResponseEntity<Pesagem> update(@PathVariable Long id, @RequestBody Pesagem obj) {
+    @GetMapping("/pesagem/editar/{id}")
+    public String editar(@PathVariable Long id, @ModelAttribute Pesagem obj) {
         try {
-            var updated = servicePesagem.update(id, obj);
-            return ResponseEntity.ok(updated);
+            servicePesagem.update(id, obj);
+            return "redirect:/pesagem/historico";
         } catch (EntityNotFoundException e) {
-            return ResponseEntity.notFound().build();
+            return "redirect:/pesagem/historico?error=notfound";
         }
     }
+
+    @GetMapping("/pesagem/excluir/{id}")
+    public String excluir(@PathVariable Long id) {
+        servicePesagem.delete(id);
+        return "redirect:/pesagem/historico";
+    }
+
 }
